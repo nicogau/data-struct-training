@@ -17,12 +17,12 @@ tree.addNode(6)
 tree.addNode(7)
 tree.addNode(8)
 
-console.log('count', tree.countNodes())
-console.log('height', tree.heightTree())
-tree.drawNodes()
+// console.log('count', tree.countNodes())
+// console.log('height', tree.heightTree())
+// tree.drawNodes()
 
 /* training with graph */
-// graph.run()
+graph.run()
 
 /* training with twoPointers pattern */
 // twoPointers.run()
