@@ -10,6 +10,7 @@
 
 type AdjacencyList<T extends string | number> = Record<T, T[]>
 type Edges<T extends string | number> = Array<[T, T]>
+type Grid<T extends string | number> = Array<T[]>
 
 /* directed graph Adjacency Lists */
 const adjacencyList: AdjacencyList<string> = {
@@ -50,7 +51,7 @@ const undirectedAgencyList: AdjacencyList<number> = {
   8: [0, 5], 
 }
 
-const undirectedTwoIslandsList: AdjacencyList<number> = {
+const undirectedTwoComponentList: AdjacencyList<number> = {
   0: [8, 1, 5],
   1: [0],
   2: [3, 4],
@@ -76,6 +77,15 @@ const undirectedShortestPathEdges: Edges<string> = [
   ['w', 'v']
 ]
 
+const islandsList: Grid<string> = [
+  ['w','l','w','w','w'],
+  ['w','l','w','w','w',],
+  ['w','w','w','l','w',],
+  ['w','w','l','l','w',],
+  ['l','w','w','l','l',],
+  ['l','l','w','w','w',],
+]
+
 export const run = () => {
   /* directed graph */
   console.log('graph - depthFirst iterative traversal', depthFirst(adjacencyList, 'a'))
@@ -93,11 +103,13 @@ export const run = () => {
 
   console.log('graph - undirectedHasPath depth first ', undirectedHasPath(edges, 'i', 'l'))
 
-  console.log('graph - connectedComponents - count number of islands in adjacencyList ', connectedComponents(undirectedAgencyList))
+  console.log('graph - connectedComponents - count number of components in adjacencyList ', connectedComponents(undirectedAgencyList))
 
-  console.log('graph - largestIslandLength  - return biggest island in adjacencyList ', largestIslandLength(undirectedTwoIslandsList))
+  console.log('graph - largestComponentLength  - return biggest component in adjacencyList ', largestComponentLength(undirectedTwoComponentList))
 
   console.log('graph - undirectedShortestPathEdges  - shortest path in edges list ', undirectedShortestPath(undirectedShortestPathEdges, 'v', 'z'))
+
+  console.log('graph - countIsland', countIslands(islandsList))
 }
 
 /**
@@ -215,7 +227,7 @@ const undirectedHasPath = <T extends number | string> (edgeList: Edges<T>, start
   return false 
 }
 
-/* connected components - count number of islands */
+/* connected components - count number of components */
 // depth first iterative
 const connectedComponents = <T extends number | string> (list: AdjacencyList<T>): number => {
   const visited = new Set() 
@@ -243,9 +255,9 @@ const connectedComponents = <T extends number | string> (list: AdjacencyList<T>)
   return components
 }
 
-/* find the island which have the biggest number of nodes */
+/* find the component which have the biggest number of nodes */
 // depth first recursive
-const largestIslandLength = <T extends string | number> (list: AdjacencyList<T>): number => {
+const largestComponentLength = <T extends string | number> (list: AdjacencyList<T>): number => {
   let maxSize = 0
   let visited = new Set<string>()  
 
@@ -299,4 +311,82 @@ const undirectedShortestPath = <T extends string | number> (edges: Edges<T>, sta
 
   return shortestPath
 }
+
+/* find number of islands */
+enum GridSymbol  {
+  land = "l",
+  water = "w"
+}
+
+// is cell a piece of land?
+const isLand = (grid: Grid<string | number>, cell: [number, number]) =>  {
+  const [rowCell, colCell] = cell
+  return grid[rowCell][colCell] ==  GridSymbol.land as any
+} 
+
+const findValidCellNeighbours  = (grid: Grid<string | number>, cell: [number, number]): Array<[number, number]> => {
+  const [rowCell, colCell] = cell 
+  const validNeighbours = [] as Array<[number, number]>
+
+  let neighbours: Record<'left' | 'right' | 'up' | 'bottom', [number, number] | null> = {
+    left: colCell > 0 ? [rowCell, colCell -1] : null  ,
+    right:colCell < grid[rowCell].length -1 ? [rowCell, colCell + 1] : null ,
+    up: rowCell > 0 ? [rowCell -1, colCell ] : null,
+    bottom: rowCell < grid[rowCell].length -1 ? [rowCell + 1, colCell] : null
+  }
+  for (let neighbour in neighbours) {
+    let typedNeighbour = neighbour  as keyof typeof neighbours
+    const neighbourCoord = neighbours[typedNeighbour] 
+    if (neighbourCoord !== null ) {
+      if (isLand(grid, neighbourCoord)) {
+        validNeighbours.push(neighbourCoord)
+      }
+    }
+  }
+  return validNeighbours
+
+}
+
+// if cell is part of an island  find all part of the island
+// discard already discovered pieces of island
+const exploreIsland = (grid: Grid<string | number>, cell: [number, number], visited: Set<string>): boolean  => {
+  const cellString = cell.join(' ') 
+  if (visited.has(cellString)) return false
+  let queue: [number, number][] = [cell]
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (!current) return true
+    visited.add(current.join(' '))   
+    let neighbours = findValidCellNeighbours(grid, current) 
+    for (let neighbour of neighbours) {
+      if(!visited.has(neighbour.join(" "))) {
+        queue.push(neighbour)
+      }
+    }
+  }
+  return true
+}
+
+/* main function to count islands */
+const countIslands = (grid: Grid<string | number>) => {
+  let visited = new Set<string>()
+  let isLandCount = 0
+  // browse each rows and columns of the Grid 
+  for ( let row = 0; row < grid.length; row++) {
+    for (let col = 0; col < grid[row].length; col++) {
+      const currentCell: [number, number] = [row, col]
+      // 1. check if the current cell is part of an island else continue the loop
+      if (!isLand(grid, currentCell)) continue
+
+      // 2. check if neighbours of the cell are part of the island
+      // 3. mark all visited piece of island and ignore already visited cells 
+      const isNewIsland = exploreIsland(grid, currentCell, visited)
+      if (isNewIsland) isLandCount++
+
+      // 4. when  all part of the island are visited go to next column
+    }
+  }
+  return isLandCount
+}
+
 
