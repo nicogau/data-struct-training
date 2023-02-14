@@ -78,11 +78,11 @@ const undirectedShortestPathEdges: Edges<string> = [
 ]
 
 const islandsList: Grid<string> = [
-  ['w','l','w','w','w'],
-  ['w','l','w','w','w',],
-  ['w','w','w','l','w',],
-  ['w','w','l','l','w',],
-  ['l','w','w','l','l',],
+  ['w','l','l','w','w'],
+  ['w','l','l','l','w',],
+  ['w','l','l','w','w',],
+  ['l','w','w','w','w',],
+  ['l','w','w','l','l', 'l'],
   ['l','l','w','w','w',],
 ]
 
@@ -110,6 +110,8 @@ export const run = () => {
   console.log('graph - undirectedShortestPathEdges  - shortest path in edges list ', undirectedShortestPath(undirectedShortestPathEdges, 'v', 'z'))
 
   console.log('graph - countIsland', countIslands(islandsList))
+
+  console.log('graph - minIslandSize', minIslandSize(islandsList))
 }
 
 /**
@@ -389,4 +391,45 @@ const countIslands = (grid: Grid<string | number>) => {
   return isLandCount
 }
 
+/* minimum island size problem */
+const minIslandSize = (grid: Grid<string | number>): number => {
+  let minSize = Infinity 
+  let visited = new Set<string>()
 
+  for (let row = 0; row < grid.length; row++) {
+    for (let col = 0; col < grid.length; col++) {
+      if (!grid[row][col]) continue
+
+      const landSize = exploreIslandSize(grid, [row, col], visited)
+      if ( landSize > 0)
+      minSize = Math.min(minSize, landSize)
+    }
+  }
+  console.log(visited)
+  return minSize
+}
+
+const exploreIslandSize = (grid: Grid<string | number> , cell: [number, number], visited: Set<string>): number => {
+  const [rowCell, colCell] = cell
+  let countLandCell = 1 
+
+
+  const rowInBound = rowCell >= 0 &&  rowCell  < grid.length   
+  const colInBound = colCell >= 0 && rowInBound && colCell  < grid[rowCell].length    
+
+  if (!colInBound) return 0 
+  if (grid[rowCell][colCell] !== 'l') return 0 
+  if (visited.has(cell.join(','))) return 0 
+
+  visited.add(cell.join(','))
+  // left
+  countLandCell += exploreIslandSize(grid, [rowCell, colCell - 1], visited)
+  // right
+  countLandCell += exploreIslandSize(grid, [rowCell, colCell + 1], visited)
+  // top
+  countLandCell += exploreIslandSize(grid, [rowCell - 1, colCell], visited)
+  // bottom
+  countLandCell += exploreIslandSize(grid, [rowCell + 1, colCell], visited)
+
+  return countLandCell
+}
